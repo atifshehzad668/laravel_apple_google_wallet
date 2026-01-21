@@ -60,7 +60,7 @@ class PassController extends Controller
     public function downloadGooglePass(Request $request)
     {
         $member_id = $request->query('id') ?? $request->query('member_id');
-        
+        // done
         if (!$member_id) {
             // Check if we have a default or fallback member for testing
             $member = Member::latest()->first();
