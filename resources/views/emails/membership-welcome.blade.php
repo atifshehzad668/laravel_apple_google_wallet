@@ -106,7 +106,7 @@
             <div style="text-align: center; margin: 30px 0;">
                 <h3 style="margin-bottom: 15px;">Your Membership QR Code</h3>
                 <div style="background: white; padding: 20px; display: inline-block; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl={{ $member->unique_member_id }}&choe=UTF-8" alt="Membership QR Code" width="200" height="200">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ urlencode($member->unique_member_id) }}" alt="Membership QR Code" width="200" height="200">
                     <p style="margin-top: 10px; font-family: monospace; font-weight: bold; color: #333;">{{ $member->unique_member_id }}</p>
                 </div>
             </div>

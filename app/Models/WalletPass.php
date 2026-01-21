@@ -45,6 +45,7 @@ class WalletPass extends Model
         'text_module_header',
         'text_module_body',
         'barcode_data',
+        'is_google_added',
         'status',
     ];
 

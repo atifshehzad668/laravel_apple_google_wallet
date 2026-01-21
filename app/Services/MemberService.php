@@ -113,9 +113,16 @@ class MemberService
      */
     public function deleteMember(int $memberId): bool
     {
-        $member = Member::findOrFail($memberId);
-        $member->status = 'deleted';
-        return $member->save();
+        $member = Member::with('walletPass')->findOrFail($memberId);
+        
+        // Clean up Apple Wallet pass file if exists
+        if ($member->walletPass && $member->walletPass->apple_pass_path) {
+            if (file_exists($member->walletPass->apple_pass_path)) {
+                @unlink($member->walletPass->apple_pass_path);
+            }
+        }
+
+        return $member->delete();
     }
 
     /**

@@ -184,8 +184,17 @@
                         </td>
                         <td>
                             @if($member->walletPass)
-                                {{ $member->walletPass->hasApplePass() ? '🍎' : '' }}
-                                {{ $member->walletPass->hasGooglePass() ? '🔗' : '' }}
+                                <div style="font-size: 12px; line-height: 1.4;">
+                                    @if($member->walletPass->google_object_id)
+                                        <div><span title="Google Object ID">🔗</span> {{ \Illuminate\Support\Str::limit($member->walletPass->google_object_id, 15) }}</div>
+                                    @endif
+                                    @if($member->walletPass->apple_serial_number)
+                                        <div><span title="Apple Serial Number">🍎</span> {{ \Illuminate\Support\Str::limit($member->walletPass->apple_serial_number, 15) }}</div>
+                                    @endif
+                                    @if(!$member->walletPass->google_object_id && !$member->walletPass->apple_serial_number)
+                                        -
+                                    @endif
+                                </div>
                             @else
                                 -
                             @endif
@@ -193,9 +202,10 @@
                         <td>{{ $member->created_at->format('M d, Y') }}</td>
                         <td>
                             <div class="actions">
-                                @if($member->walletPass && $member->walletPass->google_pass_url)
-                                    <a href="{{ $member->walletPass->google_pass_url }}" target="_blank" class="btn" style="background: #4285f4; color: white;">
-                                        🔗 Google Wallet
+                                {{-- Show "Add to Google Wallet" button only if it hasn't been "added" yet --}}
+                                @if(!($member->walletPass && $member->walletPass->is_google_added))
+                                    <a href="{{ route('google.wallet.redirect', ['id' => $member->id]) }}" target="_blank" class="btn" style="background: #4285f4; color: white;">
+                                        Add to Google Wallet
                                     </a>
                                 @endif
                                 <button onclick="regeneratePass({{ $member->id }})" class="btn btn-success">

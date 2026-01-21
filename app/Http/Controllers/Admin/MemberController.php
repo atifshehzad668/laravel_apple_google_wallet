@@ -43,8 +43,7 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Member::where('status', '!=', 'deleted')
-            ->with('walletPass');
+        $query = Member::with('walletPass');
 
         // Search functionality
         if ($request->has('search') && $request->search != '') {
@@ -195,7 +194,11 @@ class MemberController extends Controller
                 if ($googlePassResponse) {
                     \App\Models\WalletPass::updateOrCreate(
                         ['member_id' => $member->id],
-                        ['email' => $member->email]
+                        [
+                            'email' => $member->email,
+                            'google_pass_url' => $googlePassUrl,
+                            'is_google_added' => false
+                        ]
                     );
                 }
 
@@ -250,17 +253,7 @@ class MemberController extends Controller
             $memberId = $request->input('member_id');
             $member = Member::with('walletPass')->findOrFail($memberId);
 
-            // Expire Google Wallet pass if exists
-            if ($member->walletPass && $member->walletPass->google_object_id) {
-                try {
-                    $issuerId = config('wallet.google.issuer_id');
-                    $objectSuffix = str_replace($issuerId . '.', '', $member->walletPass->google_object_id);
-                    $this->eventTicketPass->expireObject($issuerId, $objectSuffix);
-                } catch (Exception $e) {
-                    Log::error('Failed to expire Google Wallet pass for member ' . $member->id . ': ' . $e->getMessage());
-                }
-            }
-
+            // Perform hard delete via service (cascading will handle walletPass if defined in DB or model)
             $this->memberService->deleteMember($memberId);
 
             // Log activity

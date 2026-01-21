@@ -75,6 +75,7 @@ class PassController extends Controller
         $walletPass = WalletPass::where('member_id', $member->id)->first();
 
         if ($walletPass && $walletPass->google_pass_url) {
+            $walletPass->update(['is_google_added' => true]);
             return redirect()->away($walletPass->google_pass_url);
         }
 
@@ -87,6 +88,17 @@ class PassController extends Controller
             $issuerId,
             $classSuffix,
             $objectSuffix
+        );
+
+        // Update or create the wallet pass record and mark as added
+        WalletPass::updateOrCreate(
+            ['member_id' => $member->id],
+            [
+                'email' => $member->email,
+                'google_pass_url' => $googlePassUrl,
+                'is_google_added' => true,
+                'status' => 'active'
+            ]
         );
 
         return redirect()->away($googlePassUrl);
