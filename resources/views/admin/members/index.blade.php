@@ -208,6 +208,12 @@
                                         Add to Google Wallet
                                     </a>
                                 @endif
+                                
+                                {{-- Show "Add to Apple Wallet" button always --}}
+                                <a href="{{ route('pass.download', ['id' => $member->id]) }}" class="btn" style="background: #000000; color: white;">
+                                    Add to Apple Wallet
+                                </a>
+                                
                                 <button onclick="regeneratePass({{ $member->id }})" class="btn btn-success">
                                     🔄 Regenerate
                                 </button>

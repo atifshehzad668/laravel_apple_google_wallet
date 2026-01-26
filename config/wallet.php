@@ -19,13 +19,13 @@ return [
     'apple' => [
         // Apple Developer IDs
         'team_id' => env('APPLE_WALLET_TEAM_ID', 'YOUR_TEAM_ID'),
-        'pass_type_id' => env('APPLE_WALLET_PASS_TYPE_ID', 'pass.com.yourdomain.membership'),
+        'pass_type_id' => env('APPLE_WALLET_PASS_TYPE_ID', 'pass.8CS98N8QKD.pinkroommembership'),
         'organization_name' => env('APPLE_WALLET_ORG_NAME', 'Premium Membership Club'),
         
-        // Certificate Paths (relative to storage/app/certificates/)
-        'certificate_path' => storage_path('app/certificates/pass_cert.p12'),
+        // Certificate Paths (relative to storage/app/apple/)
+        'certificate_path' => storage_path('app/apple/PinkRoomPass.p12'),
         'certificate_password' => env('APPLE_WALLET_CERT_PASSWORD', ''),
-        'wwdr_certificate_path' => storage_path('app/certificates/AppleWWDRCA.pem'),
+        'wwdr_certificate_path' => storage_path('app/apple/AppleWWDRCAG6.cer'),
         
         // Pass Design Settings
         'design' => [
@@ -60,7 +60,7 @@ return [
         'class_id' => env('GOOGLE_WALLET_CLASS_ID', 'membership_card_class'),
         
         // Service Account (JSON key file)
-        'service_account_file' => storage_path('app/certificates/google-wallet-service-account.json'),
+        'service_account_file' => storage_path('app/google/google_key.json'),
         
         // API Endpoints
         'api_base_url' => 'https://walletobjects.googleapis.com/walletobjects/v1',

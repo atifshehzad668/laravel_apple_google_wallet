@@ -68,7 +68,7 @@ class EventTicketPass
 
     public function __construct()
     {
-        $this->keyFilePath = storage_path('app/google/google_key.json');
+        $this->keyFilePath = config('wallet.google.service_account_file');
 
         $this->auth();
     }
@@ -88,7 +88,7 @@ class EventTicketPass
 
         // Initialize Google Wallet API service
         $this->client = new GoogleClient();
-        $this->client->setApplicationName('APPLICATION_NAME');
+        $this->client->setApplicationName(config('app.name'));
         $this->client->setScopes(Walletobjects::WALLET_OBJECT_ISSUER);
         $this->client->setAuthConfig($this->keyFilePath);
 

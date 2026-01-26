@@ -32,7 +32,7 @@ class GoogleEventTicketService
 
     public function __construct()
     {
-        $this->keyFilePath = base_path(env('GOOGLE_APPLICATION_CREDENTIALS', 'storage/app/certificates/google-wallet-service-account.json'));
+        $this->keyFilePath = config('wallet.google.service_account_file');
         $this->auth();
     }
 

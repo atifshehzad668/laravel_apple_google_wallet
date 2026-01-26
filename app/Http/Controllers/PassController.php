@@ -30,8 +30,24 @@ class PassController extends Controller
             ->where('status', 'active')
             ->first();
 
-        if (!$walletPass || !$walletPass->apple_pass_path) {
-            abort(404, 'Pass not found.');
+        // If no pass exists or no Apple pass path, generate it
+        if (!$walletPass || !$walletPass->apple_pass_path || !file_exists($walletPass->apple_pass_path)) {
+            try {
+                $appleWalletService = app(\App\Services\AppleWalletService::class);
+                $appleWalletService->generatePass($member->id);
+                
+                // Reload the wallet pass
+                $walletPass = WalletPass::where('member_id', $member->id)
+                    ->where('status', 'active')
+                    ->first();
+                    
+                if (!$walletPass || !$walletPass->apple_pass_path) {
+                    abort(500, 'Failed to generate Apple Wallet pass.');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Apple Wallet pass generation failed: ' . $e->getMessage());
+                abort(500, 'Failed to generate Apple Wallet pass: ' . $e->getMessage());
+            }
         }
 
         if (!file_exists($walletPass->apple_pass_path)) {
