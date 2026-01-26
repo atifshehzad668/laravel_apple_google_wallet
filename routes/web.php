@@ -13,9 +13,8 @@ use App\Http\Controllers\Admin\MemberController as AdminMemberController;
 |--------------------------------------------------------------------------
 */
 
-// Member Registration
-Route::get('/', [MemberController::class, 'showRegistrationForm'])->name('register.form');
-Route::post('/register', [MemberController::class, 'register'])->name('register');
+// Redirect root to admin login
+Route::redirect('/', '/admin/login');
 
 // Wallet Pass Download
 Route::get('/pass/download/{id}', [PassController::class, 'download'])->name('pass.download');

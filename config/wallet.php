@@ -22,10 +22,10 @@ return [
         'pass_type_id' => env('APPLE_WALLET_PASS_TYPE_ID', 'pass.8CS98N8QKD.pinkroommembership'),
         'organization_name' => env('APPLE_WALLET_ORG_NAME', 'Premium Membership Club'),
         
-        // Certificate Paths (relative to storage/app/apple/)
-        'certificate_path' => storage_path('app/apple/PinkRoomPass.p12'),
+        // Certificate Paths
+        'certificate_path' => storage_path('app/certificates/PinkRoomPass.p12'),
         'certificate_password' => env('APPLE_WALLET_CERT_PASSWORD', ''),
-        'wwdr_certificate_path' => storage_path('app/apple/AppleWWDRCAG6.cer'),
+        'wwdr_certificate_path' => storage_path('app/certificates/AppleWWDRCAG6.cer'),
         
         // Pass Design Settings
         'design' => [

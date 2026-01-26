@@ -267,9 +267,48 @@ class AppleWalletService
         $p12Content = file_get_contents($this->config['certificate_path']);
         $certs = [];
 
+        // Log for debugging
+        \Log::info('Attempting to read certificate with password: ' . str_repeat('*', strlen($this->config['certificate_password'])));
+        \Log::info('Certificate file size: ' . strlen($p12Content) . ' bytes');
+
+        // Enable legacy algorithms for OpenSSL 3.x compatibility
+        // This is needed for older .p12 files that use deprecated encryption
+        $opensslConf = <<<'EOT'
+openssl_conf = openssl_init
+[openssl_init]
+providers = provider_sect
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+[default_sect]
+activate = 1
+[legacy_sect]
+activate = 1
+EOT;
+        
+        // Write temporary OpenSSL config
+        $tempConf = sys_get_temp_dir() . '/openssl_legacy.cnf';
+        file_put_contents($tempConf, $opensslConf);
+        
+        // Set OpenSSL config environment variable
+        putenv('OPENSSL_CONF=' . $tempConf);
+
         if (!openssl_pkcs12_read($p12Content, $certs, $this->config['certificate_password'])) {
-            throw new Exception('Failed to read pass certificate. Check password.');
+            $opensslError = openssl_error_string();
+            \Log::error('OpenSSL error: ' . $opensslError);
+            
+            // Clean up
+            unlink($tempConf);
+            putenv('OPENSSL_CONF');
+            
+            throw new Exception('Failed to read pass certificate. OpenSSL error: ' . $opensslError . '. Check password.');
         }
+        
+        // Clean up temp config
+        unlink($tempConf);
+        putenv('OPENSSL_CONF');
+        
+        \Log::info('Certificate read successfully');
 
         // Sign manifest
         if (!openssl_pkcs7_sign(

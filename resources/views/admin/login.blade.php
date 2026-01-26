@@ -106,10 +106,6 @@
 
             <button type="submit" class="btn">Login</button>
         </form>
-
-        <div class="back-link">
-            <a href="{{ route('register.form') }}">← Back to Registration</a>
-        </div>
     </div>
 </div>
 @endsection
