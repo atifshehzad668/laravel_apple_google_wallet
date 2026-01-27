@@ -204,15 +204,24 @@
                             <div class="actions">
                                 {{-- Show "Add to Google Wallet" button only if it hasn't been "added" yet --}}
                                 @if(!($member->walletPass && $member->walletPass->is_google_added))
-                                    <a href="{{ route('google.wallet.redirect', ['id' => $member->id]) }}" target="_blank" class="btn" style="background: #4285f4; color: white;">
+                                    <a href="{{ route('google.wallet.redirect', ['id' => $member->id]) }}" 
+                                       target="_blank" 
+                                       class="btn wallet-btn" 
+                                       style="background: #4285f4; color: white;"
+                                       onclick="handleWalletClick()">
                                         Add to Google Wallet
                                     </a>
                                 @endif
                                 
-                                {{-- Show "Add to Apple Wallet" button always --}}
-                                <a href="{{ route('pass.download', ['id' => $member->id]) }}" class="btn" style="background: #000000; color: white;">
-                                    Add to Apple Wallet
-                                </a>
+                                {{-- Show "Add to Apple Wallet" button only if it hasn't been "added" yet --}}
+                                @if(!($member->walletPass && $member->walletPass->is_apple_added))
+                                    <a href="{{ route('pass.download', ['id' => $member->id]) }}" 
+                                       class="btn wallet-btn" 
+                                       style="background: #000000; color: white;"
+                                       onclick="handleWalletClick(true)">
+                                        Add to Apple Wallet
+                                    </a>
+                                @endif
                                 
                                 <button onclick="regeneratePass({{ $member->id }})" class="btn btn-success">
                                     🔄 Regenerate
@@ -243,6 +252,23 @@
 
 @section('scripts')
 <script>
+// Refresh logic for wallet pass buttons
+function handleWalletClick(isDownload = false) {
+    if (isDownload) {
+        // For Apple Wallet download, wait a bit then refresh
+        setTimeout(() => {
+            location.reload();
+        }, 3000);
+    } else {
+        // For Google Wallet redirect (opens in new tab), 
+        // refresh when user returns to this tab
+        window.addEventListener('focus', function onFocus() {
+            location.reload();
+            window.removeEventListener('focus', onFocus);
+        }, { once: true });
+    }
+}
+
 async function regeneratePass(memberId) {
     if (!confirm('Regenerate wallet passes and resend email for this member?')) {
         return;

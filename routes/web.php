@@ -21,7 +21,6 @@ Route::get('/pass/download/{id}', [PassController::class, 'download'])->name('pa
 
 // Google Wallet Redirect
 Route::get('/google-wallet/redirect', [PassController::class, 'downloadGooglePass'])->name('google.wallet.redirect');
-Route::get('/googlepass', [PassController::class, 'GooglePass'])->name('GooglePass');
 
 
 

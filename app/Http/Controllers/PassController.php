@@ -54,6 +54,10 @@ class PassController extends Controller
             abort(404, 'Pass file not found.');
         }
 
+        if ($walletPass) {
+            $walletPass->update(['is_apple_added' => true]);
+        }
+
         return response()->download(
             $walletPass->apple_pass_path,
             $member->unique_member_id . '.pkpass',
@@ -69,10 +73,6 @@ class PassController extends Controller
      */
 
 
-    public function GooglePass()
-    {
-        return view('admin.google_pass');
-    }
     public function downloadGooglePass(Request $request)
     {
         $member_id = $request->query('id') ?? $request->query('member_id');
