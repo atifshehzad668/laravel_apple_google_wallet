@@ -154,6 +154,7 @@
             <ul class="sidebar-menu">
                 <li><a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard*') ? 'active' : '' }}">📊 Dashboard</a></li>
                 <li><a href="{{ route('admin.members.index') }}" class="{{ request()->routeIs('admin.members*') ? 'active' : '' }}">👥 Members</a></li>
+                <li><a href="{{ route('admin.passes.index') }}" class="{{ request()->routeIs('admin.passes.index') ? 'active' : '' }}">📇 Pass Gallery</a></li>
                 <li><a href="{{ route('admin.profile') }}" class="{{ request()->routeIs('admin.profile') ? 'active' : '' }}">⚙️ Profile</a></li>
             </ul>
         </aside>
@@ -166,7 +167,7 @@
                     <span>{{ Auth::guard('admin')->user()->username }}</span>
                     <form action="{{ route('admin.logout') }}" method="POST" style="display: inline;">
                         @csrf
-                        <button type="submit" class="btn btn-danger">Logout</button>
+                        <button type="submit" class="btn btn-primary">Logout</button>
                     </form>
                 </div>
             </div>

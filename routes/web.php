@@ -57,4 +57,6 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/members/{id}', [AdminMemberController::class, 'show'])->name('members.show');
     Route::post('/members/regenerate-pass', [AdminMemberController::class, 'regeneratePass'])->name('members.regenerate');
     Route::post('/members/delete', [AdminMemberController::class, 'destroy'])->name('members.delete');
+    // Pass Gallery
+    Route::get('/passes', [\App\Http\Controllers\Admin\PassController::class, 'index'])->name('passes.index');
 });

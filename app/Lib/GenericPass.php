@@ -98,49 +98,46 @@ class GenericPass
     }
 
     /**
+     * Fetch all objects for a given class.
+     */
+    public function listObjects(string $issuerId, string $classSuffix)
+    {
+        try {
+            $response = $this->service->genericobject->listGenericobject([
+                'classId' => "{$issuerId}.{$classSuffix}"
+            ]);
+            return $response->getResources();
+        } catch (\Google\Service\Exception $ex) {
+            Log::error('Google Wallet Generic Object list failed: ' . $ex->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get a class.
+     */
+    public function getClass(string $issuerId, string $classSuffix)
+    {
+        try {
+            return $this->service->genericclass->get("{$issuerId}.{$classSuffix}");
+        } catch (\Google\Service\Exception $ex) {
+            Log::error('Google Wallet Generic Class get failed: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Create an object.
      */
     public function createObject(string $issuerId, string $classSuffix, string $objectSuffix, array $data = [])
     {
+        $existingObject = null;
         try {
-            $this->service->genericobject->get("{$issuerId}.{$objectSuffix}");
-            return "{$issuerId}.{$objectSuffix}";
+            $existingObject = $this->service->genericobject->get("{$issuerId}.{$objectSuffix}");
         } catch (\Google\Service\Exception $ex) {
             if (empty($ex->getErrors()) || $ex->getErrors()[0]['reason'] != 'resourceNotFound') {
                 Log::error('Google Wallet Generic Object get failed: ' . $ex->getMessage());
-                return "{$issuerId}.{$objectSuffix}";
             }
-        }
-
-        $textModules = [
-            new TextModuleData([
-                'header' => 'Member ID',
-                'body' => $data['member_id'] ?? 'N/A',
-                'id' => 'MEMBER_ID'
-            ]),
-            new TextModuleData([
-                'header' => 'Email',
-                'body' => $data['email'] ?? 'N/A',
-                'id' => 'EMAIL'
-            ])
-        ];
-
-        // Add mobile if provided
-        if (!empty($data['mobile'])) {
-            $textModules[] = new TextModuleData([
-                'header' => 'Mobile',
-                'body' => $data['mobile'],
-                'id' => 'MOBILE'
-            ]);
-        }
-
-        // Add joined date if provided
-        if (!empty($data['joined_date'])) {
-            $textModules[] = new TextModuleData([
-                'header' => 'Member Since',
-                'body' => $data['joined_date'],
-                'id' => 'JOINED_DATE'
-            ]);
         }
 
         $objectData = [
@@ -159,7 +156,7 @@ class GenericPass
                     'value' => $data['name'] ?? 'Member'
                 ])
             ]),
-            'hexBackgroundColor' => config('wallet.google.design.hex_background_color', '#1e3a8a'),
+            'hexBackgroundColor' => config('wallet.google.design.hex_background_color', '#0f172a'),
             'logo' => new Image([
                 'sourceUri' => new ImageUri([
                     'uri' => config('wallet.google.design.logo_url')
@@ -175,7 +172,23 @@ class GenericPass
                 'type' => 'QR_CODE',
                 'value' => $data['barcode_value'] ?? 'QR code value'
             ]),
-            'textModulesData' => $textModules
+            'textModulesData' => [
+                new TextModuleData([
+                    'header' => 'Member ID',
+                    'body' => $data['member_id'] ?? 'N/A',
+                    'id' => 'MEMBER_ID'
+                ]),
+                new TextModuleData([
+                    'header' => 'Email',
+                    'body' => $data['email'] ?? 'N/A',
+                    'id' => 'EMAIL'
+                ]),
+                new TextModuleData([
+                    'header' => 'Joined Date',
+                    'body' => $data['joined_date'] ?? 'N/A',
+                    'id' => 'JOINED_DATE'
+                ])
+            ]
         ];
 
         // Add subheader if provided
@@ -252,7 +265,11 @@ class GenericPass
 
         $newObject = new GenericObject($objectData);
 
-        $response = $this->service->genericobject->insert($newObject);
+        if ($existingObject) {
+            $response = $this->service->genericobject->update("{$issuerId}.{$objectSuffix}", $newObject);
+        } else {
+            $response = $this->service->genericobject->insert($newObject);
+        }
         return $response;
     }
 
@@ -290,37 +307,7 @@ class GenericPass
             'issuerName' => config('wallet.google.design.issuer_name', 'Premium Membership Club'),
         ]);
 
-        // Build text modules dynamically
-        $textModules = [
-            new TextModuleData([
-                'header' => 'Member ID',
-                'body' => $data['member_id'] ?? 'N/A',
-                'id' => 'MEMBER_ID'
-            ]),
-            new TextModuleData([
-                'header' => 'Email',
-                'body' => $data['email'] ?? 'N/A',
-                'id' => 'EMAIL'
-            ])
-        ];
-
-        if (!empty($data['mobile'])) {
-            $textModules[] = new TextModuleData([
-                'header' => 'Mobile',
-                'body' => $data['mobile'],
-                'id' => 'MOBILE'
-            ]);
-        }
-
-        if (!empty($data['joined_date'])) {
-            $textModules[] = new TextModuleData([
-                'header' => 'Member Since',
-                'body' => $data['joined_date'],
-                'id' => 'JOINED_DATE'
-            ]);
-        }
-
-        $objectData = [
+        $newObject = new GenericObject([
             'id' => "{$issuerId}.{$objectSuffix}",
             'classId' => "{$issuerId}.{$classSuffix}",
             'state' => 'ACTIVE',
@@ -336,7 +323,7 @@ class GenericPass
                     'value' => $data['name'] ?? 'Member'
                 ])
             ]),
-            'hexBackgroundColor' => config('wallet.google.design.hex_background_color', '#1e3a8a'),
+            'hexBackgroundColor' => config('wallet.google.design.hex_background_color', '#0f172a'),
             'logo' => new Image([
                 'sourceUri' => new ImageUri([
                     'uri' => config('wallet.google.design.logo_url')
@@ -352,72 +339,24 @@ class GenericPass
                 'type' => 'QR_CODE',
                 'value' => $data['barcode_value'] ?? 'QR code value'
             ]),
-            'textModulesData' => $textModules
-        ];
-
-        // Add hero image if configured
-        $heroImageUrl = $data['hero_image_url'] ?? config('wallet.google.design.hero_image_url');
-        if (!empty($heroImageUrl)) {
-            $objectData['heroImage'] = new Image([
-                'sourceUri' => new ImageUri([
-                    'uri' => $heroImageUrl
+            'textModulesData' => [
+                new TextModuleData([
+                    'header' => 'Member ID',
+                    'body' => $data['member_id'] ?? 'N/A',
+                    'id' => 'MEMBER_ID'
                 ]),
-                'contentDescription' => new LocalizedString([
-                    'defaultValue' => new TranslatedString([
-                        'language' => 'en-US',
-                        'value' => $data['hero_image_description'] ?? config('wallet.google.design.hero_image_description', 'Hero Image')
-                    ])
-                ])
-            ]);
-        }
-
-        // Add wide image if configured
-        $wideImageUrl = $data['wide_image_url'] ?? config('wallet.google.design.wide_image_url');
-        if (!empty($wideImageUrl)) {
-            $objectData['wideLogoImage'] = new Image([
-                'sourceUri' => new ImageUri([
-                    'uri' => $wideImageUrl
+                new TextModuleData([
+                    'header' => 'Email',
+                    'body' => $data['email'] ?? 'N/A',
+                    'id' => 'EMAIL'
                 ]),
-                'contentDescription' => new LocalizedString([
-                    'defaultValue' => new TranslatedString([
-                        'language' => 'en-US',
-                        'value' => $data['wide_image_description'] ?? config('wallet.google.design.wide_image_description', 'Wide Banner')
-                    ])
+                new TextModuleData([
+                    'header' => 'Joined Date',
+                    'body' => $data['joined_date'] ?? 'N/A',
+                    'id' => 'JOINED_DATE'
                 ])
-            ]);
-        }
-
-        // Add links if configured
-        $websiteUrl = config('wallet.branding.website');
-        $supportEmail = config('wallet.branding.support_email');
-        
-        if ($websiteUrl || $supportEmail) {
-            $uris = [];
-            
-            if ($websiteUrl) {
-                $uris[] = new Uri([
-                    'uri' => $websiteUrl,
-                    'description' => 'Visit Website',
-                    'id' => 'WEBSITE'
-                ]);
-            }
-            
-            if ($supportEmail) {
-                $uris[] = new Uri([
-                    'uri' => 'mailto:' . $supportEmail,
-                    'description' => 'Contact Support',
-                    'id' => 'SUPPORT'
-                ]);
-            }
-            
-            if (!empty($uris)) {
-                $objectData['linksModuleData'] = new LinksModuleData([
-                    'uris' => $uris
-                ]);
-            }
-        }
-
-        $newObject = new GenericObject($objectData);
+            ]
+        ]);
 
         $serviceAccount = json_decode(file_get_contents($this->keyFilePath), true);
 

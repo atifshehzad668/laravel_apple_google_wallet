@@ -70,7 +70,7 @@ return [
         'design' => [
             'issuer_name' => env('GOOGLE_WALLET_ISSUER_NAME', 'Apple Account'),
             'program_name' => 'Apple Account Members',
-            'card_title' => env('GOOGLE_WALLET_CARD_TITLE', 'Premium Member'),
+            'card_title' => env('GOOGLE_WALLET_CARD_TITLE', 'Apple Account Pass'),
             
             // Colors (Modern gradient dark blue to purple)
             'hex_background_color' => '#1e3a8a', // Deep blue
