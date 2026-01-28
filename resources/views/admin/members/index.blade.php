@@ -164,8 +164,9 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Mobile</th>
-                    <th>Status</th>
-                    <th>Wallet</th>
+                    <th>Member Status</th>
+                    <th>Pass Status</th>
+                    <th>Wallet IDs</th>
                     <th>Registered</th>
                     <th>Actions</th>
                 </tr>
@@ -181,6 +182,17 @@
                             <span class="badge badge-{{ $member->status === 'active' ? 'success' : 'warning' }}">
                                 {{ ucfirst($member->status) }}
                             </span>
+                        </td>
+                        <td>
+                            @if($member->walletPass)
+                                <select onchange="updatePassStatus({{ $member->id }}, this.value)" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 500;">
+                                    <option value="active" {{ $member->walletPass->status === 'active' ? 'selected' : '' }}>🟢 Active</option>
+                                    <option value="pending" {{ $member->walletPass->status === 'pending' ? 'selected' : '' }}>🟡 Pending</option>
+                                    <option value="expired" {{ $member->walletPass->status === 'expired' ? 'selected' : '' }}>🔴 Expired</option>
+                                </select>
+                            @else
+                                -
+                            @endif
                         </td>
                         <td>
                             @if($member->walletPass)
@@ -201,7 +213,10 @@
                         </td>
                         <td>{{ $member->created_at->format('M d, Y') }}</td>
                         <td>
-                            <div class="actions">
+                                <a href="{{ route('admin.members.show', $member->id) }}" class="btn btn-primary" style="background: #6366f1;">
+                                    👁️ View
+                                </a>
+                                
                                 {{-- Show "Add to Google Wallet" button only if it hasn't been "added" yet --}}
                                 @if(!($member->walletPass && $member->walletPass->is_google_added))
                                     <a href="{{ route('google.wallet.redirect', ['id' => $member->id]) }}" 
@@ -223,6 +238,25 @@
                                     </a>
                                 @endif
                                 
+                                {{-- Show "View Pass" button only if google_pass_url exists --}}
+                                <!-- @if($member->walletPass && $member->walletPass->google_pass_url)
+                                    <a href="{{ $member->walletPass->google_pass_url }}" 
+                                       target="_blank" 
+                                       class="btn" 
+                                       style="background: #4285f4; color: white;">
+                                        👁️ View Pass
+                                    </a>
+                                @endif -->
+
+                                @if($member->walletPass && $member->walletPass->google_pass_pdf_path)
+                                    <a href="{{ asset('storage/' . $member->walletPass->google_pass_pdf_path) }}" 
+                                       target="_blank" 
+                                       class="btn" 
+                                       style="background: #0f172a; color: white;">
+                                        📄 PDF
+                                    </a>
+                                @endif
+
                                 <button onclick="regeneratePass({{ $member->id }})" class="btn btn-success">
                                     🔄 Regenerate
                                 </button>
@@ -266,6 +300,29 @@ function handleWalletClick(isDownload = false) {
             location.reload();
             window.removeEventListener('focus', onFocus);
         }, { once: true });
+    }
+}
+
+async function updatePassStatus(memberId, status) {
+    try {
+        const response = await fetch('{{ route("admin.members.updatePassStatus") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ member_id: memberId, status: status })
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Reload to show updated PDF link/status if needed, or just for confirmation
+            location.reload();
+        } else {
+            alert('❌ ' + (data.message || 'Failed'));
+        }
+    } catch (e) {
+        alert('❌ Error');
     }
 }
 

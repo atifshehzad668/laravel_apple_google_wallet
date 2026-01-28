@@ -108,8 +108,8 @@ class MemberController extends Controller
                 Log::error('Google Wallet generation failed: ' . $e->getMessage());
             }
 
-            // Send email
-            $this->emailService->sendMembershipEmail($member, $applePassUrl, $googlePassUrl);
+            // Send email - DEFERRED: Email will be sent when user clicks "Add to Google Wallet"
+            // $this->emailService->sendMembershipEmail($member, $applePassUrl, $googlePassUrl);
 
             return redirect()->route('admin.members.index')->with('success', 'Member created successfully.');
         } catch (Exception $e) {
@@ -148,9 +148,12 @@ class MemberController extends Controller
 
             // Regenerate Google Wallet pass (Generic Pass)
             $googlePassUrl = null;
+            $googlePassPdf = null;
             try {
                 $passData = $this->genericPassService->regeneratePass($member->id);
                 $googlePassUrl = $passData['pass_url'];
+                // Refresh member to get new PDF path
+                $member->load('walletPass');
             } catch (Exception $e) {
                 Log::error('Google Wallet regeneration failed: ' . $e->getMessage());
             }
@@ -223,6 +226,37 @@ class MemberController extends Controller
                 'success' => false,
                 'message' => 'Member deletion failed.',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the status of a wallet pass.
+     */
+    public function updatePassStatus(Request $request): JsonResponse
+    {
+        try {
+            $memberId = $request->input('member_id');
+            $status = $request->input('status');
+
+            $member = Member::with('walletPass')->findOrFail($memberId);
+            
+            if ($member->walletPass) {
+                $member->walletPass->update(['status' => $status]);
+                
+                // Regenerate pass (and PDF) with the new status
+                $this->genericPassService->regeneratePass($member->id, $status);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pass status updated successfully.',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Pass status update failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update pass status.',
             ], 500);
         }
     }

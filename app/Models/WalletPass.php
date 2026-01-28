@@ -23,6 +23,7 @@ class WalletPass extends Model
         'google_object_id',
         'google_class_id',
         'google_pass_url',
+        'google_pass_pdf_path',
         'google_state',
         'ticket_holder_name',
         'ticket_number',

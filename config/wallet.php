@@ -73,19 +73,19 @@ return [
             'card_title' => env('GOOGLE_WALLET_CARD_TITLE', 'Apple Account Pass'),
             
             // Colors (Modern gradient dark blue to purple)
-            'hex_background_color' => '#1e3a8a', // Deep blue
+            'hex_background_color' => '#2563eb', // Vibrant blue to match PDF
             'hex_foreground_color' => '#ffffff',
             
             // Logo URL - Premium quality logo
             'logo_url' => env('GOOGLE_WALLET_LOGO_URL', 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop'),
             'logo_description' => 'Apple Account Premium Logo',
             
-            // Hero Image - Professional modern business/tech theme
-            'hero_image_url' => env('GOOGLE_WALLET_HERO_IMAGE_URL', 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&h=600&fit=crop'),
+            // Hero Image - Removed to prevent gradient overlay
+            'hero_image_url' => '',
             'hero_image_description' => 'Premium Member Hero Image',
             
-            // Wide Image - Additional visual element
-            'wide_image_url' => env('GOOGLE_WALLET_WIDE_IMAGE_URL', 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=300&fit=crop'),
+            // Wide Image - Removed to prevent gradient overlay
+            'wide_image_url' => '',
             'wide_image_description' => 'Wide Banner Image',
         ],
         

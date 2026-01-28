@@ -8,6 +8,9 @@ use App\Lib\GenericPass;
 use Exception;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
  * Service for managing Generic Google Wallet passes for members.
@@ -32,10 +35,11 @@ class GenericPassService
      * Generate Google Wallet generic pass for a member.
      *
      * @param int $memberId Member ID
+     * @param string|null $status Optional status
      * @return array Pass data with URL and object ID
      * @throws Exception
      */
-    public function generatePass(int $memberId): array
+    public function generatePass(int $memberId, ?string $status = null): array
     {
         try {
             // Get member data
@@ -67,7 +71,11 @@ class GenericPassService
 
             // Save to database
             $objectId = "{$issuerId}.{$objectSuffix}";
-            $this->savePassToDatabase($memberId, $objectId, $passUrl);
+            
+            // Generate and save PDF locally
+            $pdfPath = $this->generateAndSavePdf($member, $passUrl, $status);
+            
+            $this->savePassToDatabase($memberId, $objectId, $passUrl, $pdfPath, $status);
 
             Log::info("Generic pass created successfully for member: {$memberId}", [
                 'object_id' => $objectId,
@@ -173,21 +181,74 @@ class GenericPassService
      * @param int $memberId
      * @param string $objectId
      * @param string $passUrl
+     * @param string|null $pdfPath
      * @return void
      */
-    private function savePassToDatabase(int $memberId, string $objectId, string $passUrl): void
+    private function savePassToDatabase(int $memberId, string $objectId, string $passUrl, ?string $pdfPath = null, ?string $status = null): void
     {
         $member = Member::find($memberId);
         
+        // If status is not provided, try to keep current status or default to active
+        if (!$status) {
+            $existingPass = WalletPass::where('member_id', $memberId)->first();
+            $currentStatus = $existingPass ? $existingPass->status : 'active';
+            $status = ($currentStatus === 'revoked') ? 'active' : $currentStatus;
+        }
+
         WalletPass::updateOrCreate(
             ['member_id' => $memberId],
             [
                 'google_object_id' => $objectId,
                 'google_pass_url' => $passUrl,
+                'google_pass_pdf_path' => $pdfPath,
                 'barcode_data' => $member->unique_member_id,
-                'status' => 'active',
+                'status' => $status,
             ]
         );
+    }
+
+    /**
+     * Generate and save a PDF version of the pass.
+     *
+     * @param Member $member
+     * @param string $passUrl
+     * @param string|null $status
+     * @return string|null Path to the saved PDF
+     */
+    private function generateAndSavePdf(Member $member, string $passUrl, ?string $status = null): ?string
+    {
+        try {
+            // Create directory if it doesn't exist
+            $directory = 'passes/google';
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            // Prepare PDF data
+            $data = [
+                'member' => $member,
+                'pass_url' => $passUrl,
+                'status' => $status,
+            ];
+
+            // Generate PDF using the facade
+            $pdf = Pdf::loadView('pdf.membership_pass', $data);
+            
+            // Generate filename: MemberName_MemberID.pdf
+            $safeName = preg_replace('/[^A-Za-z0-9]/', '_', $member->full_name);
+            $filename = "{$safeName}_{$member->unique_member_id}.pdf";
+            $path = "passes/google/{$filename}";
+
+            // Save PDF to storage (using public disk)
+            Storage::disk('public')->put($path, $pdf->output());
+
+            Log::info("PDF pass saved locally for member: {$member->id} at {$path}");
+
+            return $path;
+        } catch (Exception $e) {
+            Log::error("Failed to generate PDF for member {$member->id}: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -210,16 +271,17 @@ class GenericPassService
      * This creates a new pass object and updates the database.
      *
      * @param int $memberId
+     * @param string|null $status
      * @return array
      * @throws Exception
      */
-    public function regeneratePass(int $memberId): array
+    public function regeneratePass(int $memberId, ?string $status = null): array
     {
         // Expire the old pass if it exists
         $this->revokePass($memberId);
 
         // Generate a new pass
-        return $this->generatePass($memberId);
+        return $this->generatePass($memberId, $status);
     }
 
     /**

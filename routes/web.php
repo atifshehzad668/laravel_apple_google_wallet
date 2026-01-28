@@ -17,10 +17,13 @@ use App\Http\Controllers\Admin\MemberController as AdminMemberController;
 Route::redirect('/', '/admin/login');
 
 // Wallet Pass Download
-Route::get('/pass/download/{id}', [PassController::class, 'download'])->name('pass.download');
+Route::get('/pass/download/{id}', [PassController::class, 'download'])->name('pass.download')->where('id', '[0-9]+');
 
 // Google Wallet Redirect
 Route::get('/google-wallet/redirect', [PassController::class, 'downloadGooglePass'])->name('google.wallet.redirect');
+
+// Public Pass View
+Route::get('/v/{unique_member_id}', [PassController::class, 'publicView'])->name('pass.public_view');
 
 
 
@@ -53,8 +56,10 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     // Members Management
     Route::get('/members', [AdminMemberController::class, 'index'])->name('members.index');
     Route::get('/members/create', [AdminMemberController::class, 'create'])->name('members.create');
+    Route::get('/members/store', fn() => redirect()->route('admin.members.create'));
     Route::post('/members/store', [AdminMemberController::class, 'store'])->name('members.store');
-    Route::get('/members/{id}', [AdminMemberController::class, 'show'])->name('members.show');
+    Route::get('/members/{id}', [AdminMemberController::class, 'show'])->name('members.show')->where('id', '[0-9]+');
+    Route::post('/members/update-pass-status', [AdminMemberController::class, 'updatePassStatus'])->name('members.updatePassStatus');
     Route::post('/members/regenerate-pass', [AdminMemberController::class, 'regeneratePass'])->name('members.regenerate');
     Route::post('/members/delete', [AdminMemberController::class, 'destroy'])->name('members.delete');
     // Pass Gallery

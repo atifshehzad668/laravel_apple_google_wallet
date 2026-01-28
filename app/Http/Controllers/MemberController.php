@@ -73,8 +73,9 @@ class MemberController extends Controller
                 $googlePassUrl = null;
             }
 
-            // Send email
-            $emailSent = $this->emailService->sendMembershipEmail($member, $applePassUrl, $googlePassUrl);
+            // Send email - DEFERRED: Email will be sent when user clicks "Add to Google Wallet"
+            // $emailSent = $this->emailService->sendMembershipEmail($member, $applePassUrl, $googlePassUrl);
+            $emailSent = false;
 
             return response()->json([
                 'success' => true,

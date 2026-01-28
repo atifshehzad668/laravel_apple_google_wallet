@@ -17,6 +17,11 @@ use Google\Service\Walletobjects\LocalizedString;
 use Google\Service\Walletobjects\ImageUri;
 use Google\Service\Walletobjects\Image;
 use Google\Service\Walletobjects\Uri;
+use Google\Service\Walletobjects\ClassTemplateInfo;
+use Google\Service\Walletobjects\CardTemplateOverride;
+use Google\Service\Walletobjects\CardRowTemplateInfo;
+use Google\Service\Walletobjects\TemplateItem;
+use Google\Service\Walletobjects\FieldSelector;
 use Illuminate\Support\Facades\Log;
 
 /** Class for creating and managing Generic passes in Google Wallet. */
@@ -90,7 +95,27 @@ class GenericPass
         $newClass = new GenericClass([
             'id' => "{$issuerId}.{$classSuffix}",
             'issuerName' => config('wallet.google.design.issuer_name', 'Premium Membership Club'),
-            'reviewStatus' => 'UNDER_REVIEW'
+            'reviewStatus' => 'UNDER_REVIEW',
+            'classTemplateInfo' => new ClassTemplateInfo([
+                'cardTemplateOverride' => new CardTemplateOverride([
+                    'cardRowTemplateInfos' => [
+                        new CardRowTemplateInfo([
+                            'twoItems' => [
+                                'startItem' => new TemplateItem([
+                                    'firstValue' => new FieldSelector([
+                                        'fields' => [['fieldPath' => 'object.textModulesData[\'EMAIL\']']]
+                                    ])
+                                ]),
+                                'endItem' => new TemplateItem([
+                                    'firstValue' => new FieldSelector([
+                                        'fields' => [['fieldPath' => 'object.textModulesData[\'MOBILE\']']]
+                                    ])
+                                ])
+                            ]
+                        ])
+                    ]
+                ])
+            ])
         ]);
 
         $response = $this->service->genericclass->insert($newClass);
@@ -182,6 +207,11 @@ class GenericPass
                     'header' => 'Email',
                     'body' => $data['email'] ?? 'N/A',
                     'id' => 'EMAIL'
+                ]),
+                new TextModuleData([
+                    'header' => 'Mobile',
+                    'body' => $data['mobile'] ?? 'N/A',
+                    'id' => 'MOBILE'
                 ]),
                 new TextModuleData([
                     'header' => 'Joined Date',
@@ -349,6 +379,11 @@ class GenericPass
                     'header' => 'Email',
                     'body' => $data['email'] ?? 'N/A',
                     'id' => 'EMAIL'
+                ]),
+                new TextModuleData([
+                    'header' => 'Mobile',
+                    'body' => $data['mobile'] ?? 'N/A',
+                    'id' => 'MOBILE'
                 ]),
                 new TextModuleData([
                     'header' => 'Joined Date',
