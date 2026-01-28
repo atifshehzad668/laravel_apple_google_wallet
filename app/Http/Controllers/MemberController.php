@@ -8,7 +8,7 @@ use App\Services\MemberService;
 use App\Services\AppleWalletService;
 use App\Services\GoogleWalletService;
 use App\Services\EmailNotificationService;
-use App\Lib\EventTicketPass;
+use App\Services\GenericPassService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -20,20 +20,20 @@ class MemberController extends Controller
     protected AppleWalletService $appleWalletService;
     protected GoogleWalletService $googleWalletService;
     protected EmailNotificationService $emailService;
-    protected EventTicketPass $eventTicketPass;
+    protected GenericPassService $genericPassService;
 
     public function __construct(
         MemberService $memberService,
         AppleWalletService $appleWalletService,
         GoogleWalletService $googleWalletService,
         EmailNotificationService $emailService,
-        EventTicketPass $eventTicketPass
+        GenericPassService $genericPassService
     ) {
         $this->memberService = $memberService;
         $this->appleWalletService = $appleWalletService;
         $this->googleWalletService = $googleWalletService;
         $this->emailService = $emailService;
-        $this->eventTicketPass = $eventTicketPass;
+        $this->genericPassService = $genericPassService;
     }
 
     /**
@@ -63,66 +63,14 @@ class MemberController extends Controller
                 Log::error('Apple Wallet pass generation failed: ' . $e->getMessage());
             }
 
-            // Generate Google Wallet pass (Event Ticket)
+            // Generate Google Wallet pass (Generic Pass)
             $googlePassUrl = null;
             try {
-                // Check if Google Wallet service is properly configured
-                if ($this->eventTicketPass->service === null) {
-                    Log::warning('Google Wallet service not initialized. Please configure service account credentials.');
-                    // Set a placeholder message instead of null
-                    $googlePassUrl = '#'; // Will be handled in the email template
-                } else {
-                    $issuerId = config('wallet.google.issuer_id');
-                    $classSuffix = config('wallet.google.class_id');
-                    $objectSuffix = 'obj_' . $member->unique_member_id;
-
-                    // Create the Google Wallet object with member details
-                    $googlePassResponse = $this->eventTicketPass->createObject($issuerId, $classSuffix, $objectSuffix, [
-                        'name' => $member->full_name,
-                        'email' => $member->email,
-                        'ticket_number' => $member->unique_member_id,
-                        'barcode_value' => $member->unique_member_id,
-                        // You can add more mapping here if needed
-                    ]);
-
-                    if ($googlePassResponse) {
-                        // Generate the "Save to Wallet" JWT URL
-                        $googlePassUrl = $this->eventTicketPass->createJwtExistingObjects(
-                            $issuerId,
-                            $classSuffix,
-                            $objectSuffix
-                        );
-
-                        // Store Google Wallet pass details in the database
-                        \App\Models\WalletPass::updateOrCreate(
-                            ['member_id' => $member->id],
-                            [
-                                'email' => $member->email,
-                                'google_object_id' => $googlePassResponse->id,
-                                'google_class_id' => $googlePassResponse->classId,
-                                'google_pass_url' => $googlePassUrl,
-                                'google_state' => $googlePassResponse->state,
-                                'ticket_holder_name' => $googlePassResponse->ticketHolderName,
-                                'ticket_number' => $googlePassResponse->ticketNumber,
-                                'barcode_type' => $googlePassResponse->barcode->type ?? null,
-                                'barcode_value' => $googlePassResponse->barcode->value ?? null,
-                                'barcode_data' => $member->unique_member_id,
-                                'status' => 'active',
-                                // Extracting nested fields safely
-                                'seat' => $googlePassResponse->seatInfo->seat->defaultValue->value ?? null,
-                                'row' => $googlePassResponse->seatInfo->row->defaultValue->value ?? null,
-                                'section' => $googlePassResponse->seatInfo->section->defaultValue->value ?? null,
-                                'gate' => $googlePassResponse->seatInfo->gate->defaultValue->value ?? null,
-                                'hero_image_url' => $googlePassResponse->heroImage->sourceUri->uri ?? null,
-                                'latitude' => $googlePassResponse->locations[0]->latitude ?? null,
-                                'longitude' => $googlePassResponse->locations[0]->longitude ?? null,
-                            ]
-                        );
-                    }
-                }
+                $passData = $this->genericPassService->generatePass($member->id);
+                $googlePassUrl = $passData['pass_url'];
             } catch (Exception $e) {
-                Log::error('Google Wallet Event Ticket generation failed: ' . $e->getMessage());
-                $googlePassUrl = null; // Explicitly set to null on error
+                Log::error('Google Wallet Generic Pass generation failed: ' . $e->getMessage());
+                $googlePassUrl = null;
             }
 
             // Send email

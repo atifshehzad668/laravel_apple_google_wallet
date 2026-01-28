@@ -56,11 +56,11 @@ return [
     */
     'google' => [
         // Google Wallet IDs
-        'issuer_id' => env('GOOGLE_WALLET_ISSUER_ID', '3388000000000000000'),
-        'class_id' => env('GOOGLE_WALLET_CLASS_ID', 'membership_card_class'),
+        'issuer_id' => env('GOOGLE_WALLET_ISSUER_ID', '3388000000023068687'),
+        'class_id' => env('GOOGLE_WALLET_CLASS_ID', 'appleaccounts1234'),
         
         // Service Account (JSON key file)
-        'service_account_file' => storage_path('app/google/google_key.json'),
+        'service_account_file' => storage_path('app/google/apple-accounts.json'),
         
         // API Endpoints
         'api_base_url' => 'https://walletobjects.googleapis.com/walletobjects/v1',
@@ -68,17 +68,25 @@ return [
         
         // Pass Design Settings
         'design' => [
-            'issuer_name' => env('GOOGLE_WALLET_ISSUER_NAME', 'Premium Membership Club'),
-            'program_name' => 'Premium Members',
-            'card_title' => 'Member Card',
+            'issuer_name' => env('GOOGLE_WALLET_ISSUER_NAME', 'Apple Account'),
+            'program_name' => 'Apple Account Members',
+            'card_title' => env('GOOGLE_WALLET_CARD_TITLE', 'Premium Member'),
             
-            // Colors (hex format)
-            'hex_background_color' => '#0f172a',
+            // Colors (Modern gradient dark blue to purple)
+            'hex_background_color' => '#1e3a8a', // Deep blue
             'hex_foreground_color' => '#ffffff',
             
-            // Logo URL (must be HTTPS)
-            'logo_url' => env('GOOGLE_WALLET_LOGO_URL', 'https://yourdomain.com/images/logo.png'),
-            'logo_description' => 'Premium Membership Club Logo',
+            // Logo URL - Premium quality logo
+            'logo_url' => env('GOOGLE_WALLET_LOGO_URL', 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop'),
+            'logo_description' => 'Apple Account Premium Logo',
+            
+            // Hero Image - Professional modern business/tech theme
+            'hero_image_url' => env('GOOGLE_WALLET_HERO_IMAGE_URL', 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&h=600&fit=crop'),
+            'hero_image_description' => 'Premium Member Hero Image',
+            
+            // Wide Image - Additional visual element
+            'wide_image_url' => env('GOOGLE_WALLET_WIDE_IMAGE_URL', 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=300&fit=crop'),
+            'wide_image_description' => 'Wide Banner Image',
         ],
         
         // Barcode Settings

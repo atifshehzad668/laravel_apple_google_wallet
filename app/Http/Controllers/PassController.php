@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\WalletPass;
-use App\Lib\EventTicketPass;
+use App\Services\GenericPassService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -13,11 +13,11 @@ use Inertia\Inertia;
 
 class PassController extends Controller
 {
-    protected EventTicketPass $eventTicketPass;
+    protected GenericPassService $genericPassService;
 
-    public function __construct(EventTicketPass $eventTicketPass)
+    public function __construct(GenericPassService $genericPassService)
     {
-        $this->eventTicketPass = $eventTicketPass;
+        $this->genericPassService = $genericPassService;
     }
 
     /**
@@ -95,28 +95,25 @@ class PassController extends Controller
             return redirect()->away($walletPass->google_pass_url);
         }
 
-        // Fallback: Generate the "Save to Wallet" JWT URL
-        $issuerId = config('wallet.google.issuer_id');
-        $classSuffix = config('wallet.google.class_id');
-        $objectSuffix = 'obj_' . $member->unique_member_id;
+        // Fallback: Generate pass using GenericPassService
+        try {
+            $passData = $this->genericPassService->generatePass($member->id);
+            $googlePassUrl = $passData['pass_url'];
 
-        $googlePassUrl = $this->eventTicketPass->createJwtExistingObjects(
-            $issuerId,
-            $classSuffix,
-            $objectSuffix
-        );
+            // Mark as added
+            WalletPass::updateOrCreate(
+                ['member_id' => $member->id],
+                [
+                    'google_pass_url' => $googlePassUrl,
+                    'is_google_added' => true,
+                    'status' => 'active'
+                ]
+            );
 
-        // Update or create the wallet pass record and mark as added
-        WalletPass::updateOrCreate(
-            ['member_id' => $member->id],
-            [
-                'email' => $member->email,
-                'google_pass_url' => $googlePassUrl,
-                'is_google_added' => true,
-                'status' => 'active'
-            ]
-        );
-
-        return redirect()->away($googlePassUrl);
+            return redirect()->away($googlePassUrl);
+        } catch (\Exception $e) {
+            Log::error('Google Wallet pass generation failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to generate Google Wallet pass.');
+        }
     }
 }
